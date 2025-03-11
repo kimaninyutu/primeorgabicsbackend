@@ -4,6 +4,8 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from ninja import NinjaAPI
+from ninja import Router
+from django.http import HttpResponse
 
 # Import your routers
 from apps.accounts.api import router as accounts_router
@@ -23,6 +25,16 @@ api.add_router("/orders/", orders_router)
 api.add_router("/cart/", cart_router)
 api.add_router("/payments/", payments_router)
 api.add_router("/wishlist/", wishlist_router)
+
+health_router = Router()
+
+@health_router.get("/")
+def health_check(request):
+    """Health check endpoint for Render"""
+    return HttpResponse("OK")
+
+# Then in your main API router:
+api.add_router("/health", health_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
