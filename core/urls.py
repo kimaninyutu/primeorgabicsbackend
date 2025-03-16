@@ -26,15 +26,6 @@ api.add_router("/cart/", cart_router)
 api.add_router("/payments/", payments_router)
 api.add_router("/wishlist/", wishlist_router)
 
-health_router = Router()
-
-@health_router.get("/")
-def health_check(request):
-    """Health check endpoint for Render"""
-    return HttpResponse("OK")
-
-# Then in your main API router:
-api.add_router("/health", health_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
