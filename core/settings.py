@@ -15,7 +15,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# ALLOWED_HOSTS updated to include Render domain
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "primeorgabicsbackend.onrender.com"
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -28,7 +33,7 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'ninja',
-    'corsheaders',  # Add this line
+    'corsheaders',
 
     # Local apps
     'apps.accounts',
@@ -140,10 +145,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# For testing, use the console backend which prints emails to console
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# For production, use SMTP
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # Or your SMTP server
 EMAIL_PORT = 587
@@ -154,3 +156,5 @@ EMAIL_HOST_PASSWORD = 'vnvd blva aejb rnbx'
 DEFAULT_FROM_EMAIL = 'primeorganics.co.ke@gmail.com'
 FRONTEND_URL = 'http://localhost:3000'
 
+# Ensure Render uses the correct PORT
+PORT = os.getenv("PORT", "8000")
