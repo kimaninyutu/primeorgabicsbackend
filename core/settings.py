@@ -28,6 +28,7 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'ninja',
+    'corsheaders',  # Add this line
 
     # Local apps
     'apps.accounts',
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Add this line at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -47,6 +49,33 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # For development only, set to False in production
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'core.urls'
 
@@ -120,7 +149,8 @@ EMAIL_HOST = 'smtp.gmail.com'  # Or your SMTP server
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'primeorganics.co.ke@gmail.com'
-EMAIL_HOST_PASSWORD = 'vnvd blva aejb rnbx'  # Use app password for Gmail
+EMAIL_HOST_PASSWORD = 'vnvd blva aejb rnbx'
 
 DEFAULT_FROM_EMAIL = 'primeorganics.co.ke@gmail.com'
-FRONTEND_URL = 'http://localhost:3000'  # Your frontend URL
+FRONTEND_URL = 'http://localhost:3000'
+

@@ -1,5 +1,6 @@
 # apps/accounts/services.py
-from datetime import datetime, timedelta
+from django.utils import timezone  # Import Django's timezone utility
+from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -7,7 +8,10 @@ import jwt as pyjwt  # Renamed to avoid conflicts
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from .models import User, EmailVerification, PasswordReset, UserSession
+import logging
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class AuthService:
     @staticmethod
@@ -18,8 +22,8 @@ class AuthService:
 
         payload = {
             'user_id': user_id,
-            'exp': datetime.utcnow() + expiry,
-            'iat': datetime.utcnow(),
+            'exp': timezone.now() + expiry,
+            'iat': timezone.now(),
         }
 
         return pyjwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
@@ -67,44 +71,48 @@ class AuthService:
     @staticmethod
     def register(data, send_verification=True):
         """Register a new user"""
-        if User.objects.filter(email=data['email']).exists():
-            raise ValidationError("Email already registered")
+        try:
+            if User.objects.filter(email=data['email']).exists():
+                raise ValidationError("Email already registered")
 
-        # Ensure first_name and last_name are never null
-        first_name = data.get('first_name', '')
-        if first_name is None:
-            first_name = ''
+            # Ensure first_name and last_name are never null
+            first_name = data.get('first_name', '')
+            if first_name is None:
+                first_name = ''
 
-        last_name = data.get('last_name', '')
-        if last_name is None:
-            last_name = ''
+            last_name = data.get('last_name', '')
+            if last_name is None:
+                last_name = ''
 
-        user = User.objects.create_user(
-            username=data['username'],
-            email=data['email'],
-            password=data['password'],
-            first_name=first_name,
-            last_name=last_name,
-            phone_number=data.get('phone_number', '')
-        )
+            user = User.objects.create_user(
+                username=data['username'],
+                email=data['email'],
+                password=data['password'],
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=data.get('phone_number', '')
+            )
 
-        # Create email verification if requested
-        if send_verification:
-            try:
-                verification = EmailVerification.create_verification(user)
-                EmailService.send_verification_email(user, verification)
-            except Exception as e:
-                # Log the error but don't fail registration
-                print(f"Error sending verification email: {e}")
-                # For testing, automatically verify the user
-                user.is_email_verified = True
-                user.save()
+            # Create email verification if requested
+            if send_verification:
+                try:
+                    verification = EmailVerification.create_verification(user)
+                    EmailService.send_verification_email(user, verification)
+                except Exception as e:
+                    # Log the error but don't fail registration
+                    logger.error(f"Error sending verification email: {e}")
+                    # For testing, automatically verify the user
+                    user.is_email_verified = True
+                    user.save()
 
-        return {
-            'access_token': AuthService.create_token(user.id),
-            'refresh_token': AuthService.create_refresh_token(user.id),
-            'user': user
-        }
+            return {
+                'access_token': AuthService.create_token(user.id),
+                'refresh_token': AuthService.create_refresh_token(user.id),
+                'user': user
+            }
+        except Exception as e:
+            logger.error(f"Registration error: {e}")
+            raise
 
     @staticmethod
     def verify_email(token):
@@ -247,61 +255,72 @@ class EmailService:
     @staticmethod
     def send_verification_email(user, verification):
         """Send an email verification email"""
-        subject = 'Verify your email address'
+        try:
+            subject = 'Verify your email address'
 
-        # Get FRONTEND_URL from settings or use a default
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-        verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+            # Get FRONTEND_URL from settings or use a default
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+            verification_url = f"{frontend_url}/verify-email?token={verification.token}"
 
-        # You can use a template here
-        message = f"""
-        Hi {user.first_name or user.username},
+            # You can use a template here
+            message = f"""
+            Hi {user.first_name or user.username},
 
-        Please verify your email address by clicking the link below:   
+            Please verify your email address by clicking the link below:   
 
-        {verification_url}
+            {verification_url}
 
-        This link will expire in 24 hours.
+            This link will expire in 24 hours.
 
-        Thanks,
-        The Team
-        """
+            Thanks,
+            The Team
+            """
 
-        send_mail(
-            subject,
-            message,
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
-            [user.email]
-        )
+            send_mail(
+                subject,
+                message,
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
+                [user.email]
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error sending verification email: {e}")
+            return False
 
     @staticmethod
     def send_password_reset_email(user, reset):
         """Send a password reset email"""
-        subject = 'Reset your password'
+        try:
+            subject = 'Reset your password'
 
-        # Get FRONTEND_URL from settings or use a default
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-        reset_url = f"{frontend_url}/reset-password?token={reset.token}"
+            # Get FRONTEND_URL from settings or use a default
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+            reset_url = f"{frontend_url}/reset-password?token={reset.token}"
 
-        # You can use a template here
-        message = f"""
-        Hi {user.first_name or user.username},
+            # You can use a template here
+            message = f"""
+            Hi {user.first_name or user.username},
 
-        You requested to reset your password. Click the link below to set a new password:
+            You requested to reset your password. Click the link below to set a new password:
 
-        {reset_url}
+            {reset_url}
 
-        This link will expire in 1 hour.
+            This link will expire in 1 hour.
 
-        If you didn't request this, please ignore this email.
+            If you didn't request this, please ignore this email.
 
-        Thanks,
-        The Team
-        """
+            Thanks,
+            The Team
+            """
 
-        send_mail(
-            subject,
-            message,
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
-            [user.email]
-        )
+            send_mail(
+                subject,
+                message,
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
+                [user.email]
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error sending password reset email: {e}")
+            return False
+

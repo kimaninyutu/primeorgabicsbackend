@@ -2,14 +2,26 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone  # Import Django's timezone utility
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta  # Remove datetime import
 
 
 class User(AbstractUser):
     """
     Custom user model that extends Django's AbstractUser
     """
+    # Override the username field to remove the unique constraint
+    username = models.CharField(
+        _('username'),
+        max_length=150,
+        unique=False,  # Changed from True to False
+        help_text=_('Required. 150 characters or fewer.'),
+        error_messages={
+            'max_length': _("Username must be 150 characters or fewer."),
+        },
+    )
+
     # Add custom related_name attributes to avoid clashes
     groups = models.ManyToManyField(
         'auth.Group',
@@ -71,13 +83,15 @@ class EmailVerification(models.Model):
     @classmethod
     def create_verification(cls, user, expiry_hours=24):
         """Create a new verification token for a user"""
-        expires_at = datetime.now() + timedelta(hours=expiry_hours)
+        # Use timezone.now() instead of datetime.now()
+        expires_at = timezone.now() + timedelta(hours=expiry_hours)
         return cls.objects.create(user=user, expires_at=expires_at)
 
     @property
     def is_expired(self):
         """Check if the verification token has expired"""
-        return datetime.now() > self.expires_at
+        # Use timezone.now() instead of datetime.now()
+        return timezone.now() > self.expires_at
 
 
 class PasswordReset(models.Model):
@@ -96,13 +110,15 @@ class PasswordReset(models.Model):
     @classmethod
     def create_reset_token(cls, user, expiry_hours=1):
         """Create a new password reset token for a user"""
-        expires_at = datetime.now() + timedelta(hours=expiry_hours)
+        # Use timezone.now() instead of datetime.now()
+        expires_at = timezone.now() + timedelta(hours=expiry_hours)
         return cls.objects.create(user=user, expires_at=expires_at)
 
     @property
     def is_expired(self):
         """Check if the reset token has expired"""
-        return datetime.now() > self.expires_at or self.is_used
+        # Use timezone.now() instead of datetime.now()
+        return timezone.now() > self.expires_at or self.is_used
 
 
 class UserSession(models.Model):
@@ -119,3 +135,4 @@ class UserSession(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.session_id}"
+
