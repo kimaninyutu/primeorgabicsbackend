@@ -1,4 +1,3 @@
-# render.yaml
 services:
   - type: web
     name: primeorgabicsbackend
@@ -14,7 +13,7 @@ services:
       
       # Collect static files
       python manage.py collectstatic --noinput
-    startCommand: gunicorn primeorgabicsbackend.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: DEBUG
         value: "False"
@@ -26,21 +25,33 @@ services:
         fromDatabase:
           name: primeorgabics-db
           property: connectionString
+      - key: DB_NAME
+        value: "primeorgabics"
+      - key: DB_USER
+        value: "primeorgabics_user"
+      - key: DB_PASSWORD
+        sync: false  # Set manually in Render dashboard
+      - key: DB_HOST
+        value: "dpg-XXXXXX.render.com"  # Update with your actual Render DB host
+      - key: DB_PORT
+        value: "5432"
       - key: FRONTEND_URL
         value: "https://primeorganics.vercel.app"  # Update with your frontend URL
       - key: DEFAULT_FROM_EMAIL
-        value: "noreply@example.com"  # Update with your email
+        value: "primeorganics.co.ke@gmail.com"
       # Add these if you're using email
       - key: EMAIL_HOST
-        value: "smtp.gmail.com"  # Update with your SMTP server
+        value: "smtp.gmail.com"
       - key: EMAIL_PORT
         value: "587"
       - key: EMAIL_USE_TLS
         value: "True"
       - key: EMAIL_HOST_USER
-        sync: false  # You'll need to set this manually in the Render dashboard
+        sync: false  # Set manually in Render dashboard
       - key: EMAIL_HOST_PASSWORD
-        sync: false  # You'll need to set this manually in the Render dashboard
+        sync: false  # Set manually in Render dashboard
+      - key: PORT
+        value: "8000"  # Ensures correct port binding on Render
     autoDeploy: true  # Enable auto-deploy on push to the main branch
     healthCheckPath: /api/health/  # Add a health check endpoint to your Django app
 
